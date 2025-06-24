@@ -1,0 +1,45 @@
+"""
+Sales Data Normalization
+
+Normalizes sales data by joining with product location date ranges
+to ensure consistent date coverage across all products.
+"""
+
+import polars as pl
+from package.datapreparation import DataPreparation
+from pathlib import Path
+
+def create_sales_interim():
+    project_root = Path(__file__).parent.parent
+    
+    DataPrepSalesRaw = DataPreparation(
+        project_root / "data/2.raw/DataPrepSalesRaw_20241215_111210.parquet"
+    )
+    DataPrepProdLocInterim = DataPreparation(
+        project_root / "data/3.interim/prodlocs/ProdLocs_20250405_174339.parquet"
+    )
+
+    sales_interim = (
+        DataPrepSalesRaw
+        .load_data(lazy=True)
+        .join(
+            DataPrepProdLocInterim
+            .load_data(lazy=True)
+            .select_columns(['id', 'prodloc_daterange'])
+            .modify_data(
+                lambda data: data.explode('prodloc_daterange').rename({'prodloc_daterange': 'date'})
+            )
+            , on=['id', 'date']
+            , how='inner'
+        )
+    )
+
+    sales_interim.write_parquet(
+        sink=True,
+        name='sales',
+        path='3.interim',
+        subfolder='sales'
+    )
+
+if __name__ == "__main__":
+    create_sales_interim() 
