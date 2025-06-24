@@ -117,7 +117,7 @@ def create_gaussian_spline_features():
         .select_columns(['date'])
         .join(
             spline_wide,
-            on='date',
+            on=['date'],
             how='left'
         )
         .modify_data(

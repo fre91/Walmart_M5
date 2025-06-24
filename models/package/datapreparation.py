@@ -46,10 +46,15 @@ class DataPreparation:
             pl.col(column).hash(seed=4).alias(new_column_name)
         )
         return self
-    def select_columns(self, columns: list):
+    def select_columns(self, columns):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        self.data = self.data.select(columns)
+        # Allow columns to be a list of names or a polars expression
+        if isinstance(columns, list) or isinstance(columns, tuple):
+            self.data = self.data.select(columns)
+        else:
+            # Assume columns is a polars expression
+            self.data = self.data.select([columns])
         return self
     def modify_data(self, expression):
         if self.data is None:
