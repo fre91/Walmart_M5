@@ -65,13 +65,10 @@ DataPrepCalendarRaw = (
     .load_data(lazy=True)
 )
 
-DataPrepProdLocRaw.write_parquet(sink=True, name='DataPrepProdLocRaw',path='2.raw' , subfolder='DataPrepProdLocRaw')
-
-DataPrepProdLocRaw.write_parquet(sink=True, name='DataPrepProdLocRaw',path='2.raw' , subfolder='DataPrepProdLocRaw')
-
-DataPrepSalesRaw.write_parquet(sink=True, name='DataPrepSalesRaw',path='2.raw')
-DataPrepCalendarRaw.write_parquet(sink=True, name='DataPrepCalendarRaw',path='2.raw')
-DataPrepPriceRaw.write_parquet(sink=True, name='DataPrepPriceRaw',path='2.raw')
+DataPrepProdLocRaw.write_parquet(sink=True, name='prodloc_raw',path='2.raw' , subfolder='prodloc_raw')
+DataPrepSalesRaw.write_parquet(sink=True, name='sales_raw',path='2.raw', subfolder='sales_raw')
+DataPrepCalendarRaw.write_parquet(sink=True, name='calendar_raw',path='2.raw', subfolder= 'calendar_raw')
+DataPrepPriceRaw.write_parquet(sink=True, name='price_raw',path='2.raw', subfolder = 'price_raw')
 
 DataPrepCalendarRaw = None
 DataPrepProdLocRaw = None

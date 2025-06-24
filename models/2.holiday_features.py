@@ -12,8 +12,7 @@ from package.utils import get_path_to_latest_file
 
 
 
-def create_holiday_features():
-    project_root = Path(__file__).parent.parent
+def create_event_features():
     
     DataPrepCalendarRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
     
@@ -77,10 +76,10 @@ def create_holiday_features():
 
     holiday_output.write_parquet(
         sink=True,
-        name='holiday_bool_features',
+        name='event_features',
         path='3.interim',
-        subfolder= 'holiday_bool_features'
+        subfolder= 'event_features'
     )
 
 if __name__ == "__main__":
-    create_holiday_features() 
+    create_event_features() 

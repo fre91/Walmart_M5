@@ -92,24 +92,22 @@ class DataPreparation:
         else:
             self.schema = self.data.schema
         return self
-    def pivot_and_lazy(self,index=None,on=None,values=None, aggregate_function=None):
+    def pivot_and_lazy(self, index=None, on=None, values=None, aggregate_function=None):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
         # Ensure required arguments are not None
-        if index is None or on is None or values is None or aggregate_function is None:
-            raise ValueError("index, on, values, and aggregate_function must all be provided.")
+        if index is None or on is None or values is None:
+            raise ValueError("index, on, and values must all be provided.")
         if isinstance(self.data, pl.LazyFrame):
             df = self.data.collect()
         else:
             df = self.data
+        pivot_kwargs = dict(index=index, on=on, values=values)
+        if aggregate_function is not None:
+            pivot_kwargs['aggregate_function'] = aggregate_function
         self.data = (
             df
-            .pivot(
-                index=index
-                , on= on
-                , values=values
-                , aggregate_function=aggregate_function
-            )
+            .pivot(**pivot_kwargs)
             .fill_null(0)
             .lazy()
         )

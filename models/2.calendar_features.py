@@ -43,14 +43,8 @@ def create_gaussian_splines(df:pl.DataFrame, ordinal_col , n_components=3):
 
 
 def create_calendar_features():
-    # Get the project root (two levels up from the current script)
-    project_root = Path(__file__).parent.parent
     
-    # Print the paths to debug
-    print(f"Project root: {project_root}")
-    print(f"Full path: {project_root / 'data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet'}")
-    
-    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
+    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'calendar_raw'))
 
     calendar_interim = (
         calendar_raw
@@ -133,9 +127,9 @@ def create_calendar_features():
 
     calendar_interim.write_parquet(
         sink=True,
-        name='calender_trig_features',
+        name='calender_features',
         path='3.interim',
-        subfolder= 'calender_trig_features'
+        subfolder= 'calender_features'
     )
 
 
@@ -143,13 +137,13 @@ if __name__ == "__main__":
     create_calendar_features() 
     
     # Adjust this path to the actual file generated
-    file_path = Path("3.interim/calender_trig_features") / "calender_trig_features_<timestamp>.parquet"
+    #file_path = Path("3.interim/calender_trig_features") / "calender_trig_features_<timestamp>.parquet"
 
     # Load the file
-    df = pl.read_parquet(r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/3.interim/calender_trig_features/calender_trig_features_20250505_212843.parquet")
+    #df = pl.read_parquet(r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/3.interim/calender_trig_features/calender_trig_features_20250505_212843.parquet")
 
     # Show the schema (column names and types)
-    print(df.schema)
+    #print(df.schema)
 
     # Show the first few rows
-    df.head(10)
+    #df.head(10)
