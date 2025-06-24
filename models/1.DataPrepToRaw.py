@@ -24,7 +24,7 @@ DataPrepProdLocRaw = (
 DataPrepSalesRaw = (
     DataPrepSales.load_data(lazy=True)
     #.hash_column(column='id', new_column_name='id_seq_num')
-    .transform_to_long_format(
+    .transform_sales_to_long_format(
         drop_columns=['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id'],
         keep_id_column='id',
         value_column_name='sales',
@@ -34,7 +34,7 @@ DataPrepSalesRaw = (
         DataPrepCalendar
         .load_data(lazy=True)
         .select_columns(['d','date'])
-        , on='d'
+        , on= ['d']
         , how='left'
     )
    .select_columns(['id','date','sales'])

@@ -24,7 +24,7 @@ class DataPreparation:
         else:
             self.schema = self.data.schema
         return self  # Return self to enable method chaining
-    def transform_to_long_format(self, drop_columns=None, keep_id_column='id', value_column_name='sales', date_column_name='day'):
+    def transform_sales_to_long_format(self, drop_columns= ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id'] , keep_id_column='id', value_column_name='sales', date_column_name='day'):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
         if drop_columns is None:
@@ -109,7 +109,7 @@ class DataPreparation:
             .lazy()
         )
         return self
-    def join(self, other, on: list, how: str = 'inner'):
+    def join(self, other, on: list[str], how: str = 'inner'):
         if self.data is None or other.data is None:
             raise ValueError("Data not loaded in one or both instances. Call load_data() first.")
         valid_hows = {'inner', 'left', 'right', 'full', 'semi', 'anti', 'cross'}
