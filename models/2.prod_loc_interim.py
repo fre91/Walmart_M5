@@ -10,17 +10,14 @@ Creates a dataset with product location metadata including:
 import polars as pl
 from pathlib import Path
 from datetime import date
+from package.utils import get_path_to_latest_file
 from package.datapreparation import DataPreparation
 
 def create_prod_loc_interim():
     project_root = Path(__file__).parent.parent
     
-    DataPrepProdLocRaw = DataPreparation(
-        project_root / "data/2.raw/DataPrepProdLocRaw_20241215_111210.parquet"
-    )
-    DataPrepSalesRaw = DataPreparation(
-        project_root / "data/2.raw/DataPrepSalesRaw_20241215_111210.parquet"
-    )
+    DataPrepProdLocRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepProdLocRaw'))
+    DataPrepSalesRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepSalesRaw'))
 
     prod_loc_interim = (
         DataPrepProdLocRaw

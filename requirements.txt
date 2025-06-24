@@ -12,3 +12,4 @@ pandas
 dash
 plotly
 datetime
+sklearn

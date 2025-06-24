@@ -1,13 +1,15 @@
+# %%
 # import librariesx
 import polars as pl
 from datetime import date
+from package.utils import get_path_to_latest_file
 from package.datapreparation import DataPreparation
 
 # Usage Example
-DataPrepSales = DataPreparation(r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/1. external/sales_train_evaluation.parquet")
-DataPrepProdLoc = DataPreparation(r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/1. external/sales_train_evaluation.parquet")
-DataPrepCalendar = DataPreparation(r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/1. external/calendar.parquet")
-DataPrepPrice = DataPreparation(r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/1. external/sell_prices.parquet")
+DataPrepSales = DataPreparation(get_path_to_latest_file('1.external', 'sales_train_evaluation'))
+DataPrepProdLoc = DataPreparation(get_path_to_latest_file('1.external', 'sales_train_evaluation'))
+DataPrepCalendar = DataPreparation(get_path_to_latest_file('1.external', 'calendar'))
+DataPrepPrice = DataPreparation(get_path_to_latest_file('1.external', 'sell_prices'))
 
 
 DataPrepProdLocRaw = (

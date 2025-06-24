@@ -8,16 +8,15 @@ for California, Texas, and Wisconsin.
 import polars as pl
 from pathlib import Path
 from package.datapreparation import DataPreparation
+from package.utils import get_path_to_latest_file
 
 def create_snap_features():
     project_root = Path(__file__).parent.parent
     
-    DataPrepSnapRaw = DataPreparation(
-        project_root / "data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet"
-    )
+    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
 
     snap_interim = (
-        DataPrepSnapRaw
+        calendar_raw
         .load_data(lazy=True)
         .select_columns(['date', 'snap_CA', 'snap_TX', 'snap_WI'])
         .modify_data(

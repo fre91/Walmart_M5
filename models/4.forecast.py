@@ -33,7 +33,7 @@ from dash import dcc, html, Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
 
-from models.package.utils import get_path_to_latest_file
+from package.utils import get_path_to_latest_file
 
 POLARS_VERBOSE=1
 
@@ -401,8 +401,6 @@ df_plot.group_by('set_type').agg(
     rmse = pl.col("residual").pow(2).mean().sqrt(),
     bias = pl.col('prediction').sum()/pl.col('sales').sum() ,
 )
-
-
 
 df_pred = df_plot.filter(pl.col('store_id')=='CA_2').unpivot(index=['store_id', 'date','set_type','set_index','snap' ,*column_groups["holidays"] ], on =['lasso_residual','lasso_prediction','weigthed_lasso_residual','weigthed_lasso_prediction','rolling_row_std','sales']).sort(by=['set_index','set_type','date','variable']).to_pandas()
 

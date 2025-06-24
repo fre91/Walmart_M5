@@ -13,6 +13,7 @@ from pathlib import Path
 from package.datapreparation import DataPreparation
 from datetime import date
 from sklearn.mixture import GaussianMixture
+from package.utils import get_path_to_latest_file
 
 
 
@@ -49,12 +50,10 @@ def create_calendar_features():
     print(f"Project root: {project_root}")
     print(f"Full path: {project_root / 'data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet'}")
     
-    DataPrepCalendarRaw = DataPreparation(
-        project_root / "data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet"
-    )
+    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
 
     calendar_interim = (
-        DataPrepCalendarRaw
+        calendar_raw
         .load_data(lazy=True)
         .modify_data(
             lambda data:

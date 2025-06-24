@@ -7,6 +7,7 @@ Creates holiday-specific features for the dataset.
 import polars as pl
 from pathlib import Path
 from package.datapreparation import DataPreparation
+from package.utils import get_path_to_latest_file
 
 
 
@@ -14,9 +15,7 @@ from package.datapreparation import DataPreparation
 def create_holiday_features():
     project_root = Path(__file__).parent.parent
     
-    DataPrepCalendarRaw = DataPreparation(
-        project_root / "data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet"
-    )
+    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
     
     DataPrepCalendarRaw1 = DataPreparation(
         project_root / "data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet"

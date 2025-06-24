@@ -8,6 +8,7 @@ import polars as pl
 from pathlib import Path
 from sklearn.mixture import GaussianMixture
 from package.datapreparation import DataPreparation
+from package.utils import get_path_to_latest_file
 
 def create_gaussian_splines(df: pl.DataFrame, ordinal_col, n_components=3):
     if isinstance(df, pl.LazyFrame):
@@ -29,14 +30,12 @@ def create_gaussian_splines(df: pl.DataFrame, ordinal_col, n_components=3):
 def create_gaussian_spline_features():
     project_root = Path(__file__).parent.parent
     
-    DataPrepCalendarRaw = DataPreparation(
-        project_root / "data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet"
-    )
+    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
     DataPrepCalendarRaw1 = DataPreparation(
         project_root / "data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet"
     )
     event_pre_post = (
-        DataPrepCalendarRaw
+        calendar_raw
         .load_data(lazy=True)
         .modify_data(
             lambda data: (
