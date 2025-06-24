@@ -10,7 +10,6 @@ class DataPreparation:
         self.file_path = file_path
         self.data = None  # Initialize data attribute
         self.result = None
-        self.fetch = None
         self.schema = None  # Initialize schema attribute
 
     def load_data(self, lazy=True):
@@ -60,18 +59,26 @@ class DataPreparation:
     def collect(self):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        self.result = self.data.collect()
+        if isinstance(self.data, pl.LazyFrame):
+            self.result = self.data.collect()
+        else:
+            self.result = self.data
         return self
     def show_graph(self):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        self.data.show_graph()
+        if isinstance(self.data, pl.LazyFrame):
+            self.data.show_graph()
+        else:
+            raise TypeError("show_graph is only available for LazyFrame.")
         return self
     def fetch(self, limit: int = 10):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        self.fetch = self.data.fetch(n_rows=limit)
-        return self
+        if isinstance(self.data, pl.LazyFrame):
+            return self.data.fetch(limit)
+        else:
+            return self.data.head(limit)
     def update_schema(self):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
@@ -83,9 +90,15 @@ class DataPreparation:
     def pivot_and_lazy(self,index=None,on=None,values=None, aggregate_function=None):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
+        # Ensure required arguments are not None
+        if index is None or on is None or values is None or aggregate_function is None:
+            raise ValueError("index, on, values, and aggregate_function must all be provided.")
+        if isinstance(self.data, pl.LazyFrame):
+            df = self.data.collect()
+        else:
+            df = self.data
         self.data = (
-            self.data
-            .collect()
+            df
             .pivot(
                 index=index
                 , on= on
@@ -99,10 +112,10 @@ class DataPreparation:
     def join(self, other, on: list, how: str = 'inner'):
         if self.data is None or other.data is None:
             raise ValueError("Data not loaded in one or both instances. Call load_data() first.")
-        if how == 'cross':
-            self.data = self.data.join(other.data, how=how)
-        else:
-            self.data = self.data.join(other.data, on=on, how=how)
+        valid_hows = {'inner', 'left', 'right', 'full', 'semi', 'anti', 'cross'}
+        if how not in valid_hows:
+            raise ValueError(f"Invalid join type: {how}. Must be one of {valid_hows}")
+        self.data = self.data.join(other.data, on=on, how=how)  # type: ignore
         return self
     def write_parquet(self, sink=True, name=None, path='1.external', subfolder=None):
         if self.data is None:
@@ -126,9 +139,15 @@ class DataPreparation:
         else:
             file_path = os.path.join(base_path, f"{name}_{date_now}.parquet")
         if sink:
-            self.data.sink_parquet(file_path, row_group_size=100000)
+            if isinstance(self.data, pl.LazyFrame):
+                self.data.sink_parquet(file_path, row_group_size=100000)
+            else:
+                self.data.write_parquet(file_path)
         else:
-            self.result.write_parquet(file_path)
+            if self.result is not None and hasattr(self.result, 'write_parquet'):
+                self.result.write_parquet(file_path)
+            else:
+                raise TypeError("Result is not a DataFrame and cannot be written to parquet.")
         return self
     def calculate_out_of_stock_periods(self, list_of_ids=None, binomial_threshold=0.001):
         if self.data is None:
