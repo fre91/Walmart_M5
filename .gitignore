@@ -9,4 +9,6 @@ __pycache__/
 venv/
 build/
 dist/
-.ipynb_checkpoints/ 
+.ipynb_checkpoints/
+data/4.processed/
+*.parquet 
