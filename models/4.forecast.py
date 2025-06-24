@@ -6,7 +6,7 @@ import polars_ols as pls
 
 from datetime import date
 from pathlib import Path
-from package.datapreparation import DataAnalytics,DataPreparation
+from package.datapreparation import DataPreparation
 import os
 from datetime import timedelta  # Add this import
 
