@@ -15,11 +15,9 @@ from package.utils import get_path_to_latest_file
 def create_holiday_features():
     project_root = Path(__file__).parent.parent
     
-    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
+    DataPrepCalendarRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
     
-    DataPrepCalendarRaw1 = DataPreparation(
-        project_root / "data/2.raw/DataPrepCalendarRaw_20241215_111217.parquet"
-    )
+    DataPrepCalendarRaw1 = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
 
 
     calender = (
@@ -61,7 +59,7 @@ def create_holiday_features():
         calender
         .join(
             holidays
-            , on = 'date'
+            , on = ['date']
             , how ='left'
         )
         .modify_data(

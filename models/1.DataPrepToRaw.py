@@ -1,4 +1,3 @@
-# %%
 # import librariesx
 import polars as pl
 from datetime import date
@@ -6,10 +5,10 @@ from package.utils import get_path_to_latest_file
 from package.datapreparation import DataPreparation
 
 # Usage Example
-DataPrepSales = DataPreparation(get_path_to_latest_file('1.external', 'sales_train_evaluation'))
-DataPrepProdLoc = DataPreparation(get_path_to_latest_file('1.external', 'sales_train_evaluation'))
-DataPrepCalendar = DataPreparation(get_path_to_latest_file('1.external', 'calendar'))
-DataPrepPrice = DataPreparation(get_path_to_latest_file('1.external', 'sell_prices'))
+DataPrepSales = DataPreparation(get_path_to_latest_file(parentfolder ='1.external', filename= 'sales_train_evaluation.parquet'))
+DataPrepProdLoc = DataPreparation(get_path_to_latest_file(parentfolder='1.external', filename='sales_train_evaluation.parquet'))
+DataPrepCalendar = DataPreparation(get_path_to_latest_file(parentfolder='1.external',filename= 'calendar.parquet'))
+DataPrepPrice = DataPreparation(get_path_to_latest_file(parentfolder='1.external',filename= 'sell_prices.parquet'))
 
 
 DataPrepProdLocRaw = (
@@ -66,7 +65,10 @@ DataPrepCalendarRaw = (
     .load_data(lazy=True)
 )
 
-DataPrepProdLocRaw.write_parquet(sink=True, name='DataPrepProdLocRaw',path='2.raw')
+DataPrepProdLocRaw.write_parquet(sink=True, name='DataPrepProdLocRaw',path='2.raw' , subfolder='DataPrepProdLocRaw')
+
+DataPrepProdLocRaw.write_parquet(sink=True, name='DataPrepProdLocRaw',path='2.raw' , subfolder='DataPrepProdLocRaw')
+
 DataPrepSalesRaw.write_parquet(sink=True, name='DataPrepSalesRaw',path='2.raw')
 DataPrepCalendarRaw.write_parquet(sink=True, name='DataPrepCalendarRaw',path='2.raw')
 DataPrepPriceRaw.write_parquet(sink=True, name='DataPrepPriceRaw',path='2.raw')

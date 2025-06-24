@@ -128,11 +128,12 @@ class DataPreparation:
         if name is None:
             raise ValueError("Name of file not provided.")
         date_now = datetime.now().strftime("%Y%m%d_%H%M%S")
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         path_map = {
-            '1.external': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/1.external/",
-            '2.raw': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/2.raw/",
-            '3.interim': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/3.interim/",
-            '4.processed': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/4.processed/"
+            '1.external': os.path.join(project_root, 'data', '1.external'),
+            '2.raw': os.path.join(project_root, 'data', '2.raw'),
+            '3.interim': os.path.join(project_root, 'data', '3.interim'),
+            '4.processed': os.path.join(project_root, 'data', '4.processed'),
         }
         if path not in path_map:
             raise ValueError(f"Invalid path option: {path}.")

@@ -11,7 +11,6 @@ from pathlib import Path
 from package.utils import get_path_to_latest_file
 
 def create_sales_interim():
-    project_root = Path(__file__).parent.parent
     
     DataPrepSalesRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepSalesRaw'))
     DataPrepProdLocInterim = DataPreparation(get_path_to_latest_file('3.interim', 'prodlocs'))

@@ -54,7 +54,7 @@ def create_prod_loc_interim():
                     .alias('prodloc_daterange')
                 )
             )
-            , on='id'
+            , on=['id']
             , how='inner'
         )
     )

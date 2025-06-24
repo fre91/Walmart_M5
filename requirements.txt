@@ -13,3 +13,4 @@ dash
 plotly
 datetime
 sklearn
+polars_ols
