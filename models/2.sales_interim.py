@@ -32,6 +32,7 @@ def create_sales_interim():
             , on=['id', 'date']
             , how='inner'
         )
+        .calculate_out_of_stock_periods(binomial_threshold=0.0001)
     )
 
     sales_interim.write_parquet(

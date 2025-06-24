@@ -7,7 +7,7 @@ from sklearn.mixture import GaussianMixture
 
 from datetime import date
 from pathlib import Path
-from package.datapreparation import DataAnalytics,DataPreparation
+from package.datapreparation import DataPreparation
 import os
 
 
@@ -80,7 +80,7 @@ guassian_event_output = (
     .load_data(lazy=True)
 )
 
-sales_prep = DataAnalytics(
+sales_prep = DataPreparation(
     get_path_to_latest_file('sales')
 )
 
@@ -132,7 +132,6 @@ regressor_selection = (
 DesignMatrix = (
     sales_prep
     .load_data(lazy=True)
-    .calculate_out_of_stock_periods(binomial_threshold=0.0001)
     .modify_data(
         lambda data:
             data 
