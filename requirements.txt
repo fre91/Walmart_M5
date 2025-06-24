@@ -1,0 +1,14 @@
+polars
+numpy
+pyarrow
+altair
+scikit-learn
+matplotlib
+seaborn
+hvplot
+panel
+holoviews
+pandas
+dash
+plotly
+datetime
