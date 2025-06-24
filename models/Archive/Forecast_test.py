@@ -1,3 +1,4 @@
+from models.package.utils import get_path_to_latest_file
 
 lasso_expr = (
     pl.col("sales")

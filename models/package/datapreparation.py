@@ -4,7 +4,6 @@ from polars import selectors as cs
 import numpy as np
 import os
 
-
 class DataPreparation:
     def __init__(self, file_path):
         """Initialize with the file path."""
@@ -20,128 +19,70 @@ class DataPreparation:
             self.data = pl.scan_parquet(self.file_path)
         else:
             self.data = pl.read_parquet(self.file_path)
-        
         # Update schema attribute after loading data
         if isinstance(self.data, pl.LazyFrame):
             self.schema = self.data.schema
         else:
             self.schema = self.data.schema
-         # Store the schema of the loaded data
-        
         return self  # Return self to enable method chaining
-    
     def transform_to_long_format(self, drop_columns=None, keep_id_column='id', value_column_name='sales', date_column_name='day'):
-        """Transform data from wide to long format.
-        
-        Args:
-            drop_columns (list, optional): List of columns to drop. Defaults to ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id'].
-            keep_id_column (str, optional): Name of ID column to keep. Defaults to 'id'.
-            value_column_name (str, optional): Name for the values column. Defaults to 'sales'.
-            date_column_name (str, optional): Name for the date column. Defaults to 'day'.
-            
-        Returns:
-            DataPreparation: Returns self for method chaining.
-            
-        Raises:
-            ValueError: If data is not loaded before calling this method.
-        """
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
-        # Set default columns to drop if none provided
         if drop_columns is None:
             drop_columns = ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id']
-            
         self.data = (
             self.data
             .drop(drop_columns)
             .melt(id_vars=keep_id_column)
             .rename({'variable': date_column_name, 'value': value_column_name})
-            .with_columns(
-                [
-                    pl.col(value_column_name).cast(pl.Int16),
-                ]
-            )
+            .with_columns([
+                pl.col(value_column_name).cast(pl.Int16),
+            ])
         )
-        return self  # Return self instead of data for consistent method chaining
-    
+        return self
     def hash_column(self, column: str, new_column_name: str):
-        """Create a new hashed column based on the specified columns."""
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
-        # Create a new hashed column
         self.data = self.data.with_columns(
             pl.col(column).hash(seed=4).alias(new_column_name)
         )
-        
-        return self  # Return self instead of data for consistent method chaining
-    
+        return self
     def select_columns(self, columns: list):
-        """Select specific columns from the data."""
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
         self.data = self.data.select(columns)
-        return self  # Return self instead of data for consistent method chaining
-    
+        return self
     def modify_data(self, expression):
-        """Apply a Polars expression to modify the data.
-
-        Args:
-            expression: A Polars expression to apply to the data.
-
-        Returns:
-            DataPreparation: Returns self for method chaining.
-        """
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
-        # Apply the provided Polars expression to the data
         self.data = expression(self.data)
-        
-        return self  # Return self for consistent method chaining
-       
+        return self
     def collect(self):
-        """Collect the data from a lazy operation."""
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
         self.result = self.data.collect()
-        return self  # Return self instead of data for consistent method chaining
-    
+        return self
     def show_graph(self):
-        """Show the data as a graph."""
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
         self.data.show_graph()
-        return self  # Return self instead of data for consistent method chaining
-    
+        return self
     def fetch(self, limit: int = 10):
-        """Fetch a limited number of rows from the data."""
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
         self.fetch = self.data.fetch(n_rows=limit)
-        return self  # Return self instead of data for consistent method chaining
-    
+        return self
     def update_schema(self):
-        """Update the schema of the data."""
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
         if isinstance(self.data, pl.LazyFrame):
             self.schema = self.data.collect_schema()
         else:
             self.schema = self.data.schema
-        
-        return self  # Return self instead of data for consistent method chaining
-    
+        return self
     def pivot_and_lazy(self,index=None,on=None,values=None, aggregate_function=None):
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
         self.data = (
             self.data
             .collect()
@@ -154,91 +95,42 @@ class DataPreparation:
             .fill_null(0)
             .lazy()
         )
-        
         return self
-    
     def join(self, other, on: list, how: str = 'inner'):
-        """Join data with another DataPreparation instance.
-
-        Args:
-            other (DataPreparation): Another instance of DataPreparation to join with.
-            on (list): List of columns to join on.
-            how (str): Type of join to perform ('inner', 'outer', 'left', 'right'). Defaults to 'inner'.
-
-        Returns:
-            DataPreparation: A new instance with the joined data.
-        """
         if self.data is None or other.data is None:
             raise ValueError("Data not loaded in one or both instances. Call load_data() first.")
-        
-        
         if how == 'cross':
             self.data = self.data.join(other.data, how=how)
         else:
             self.data = self.data.join(other.data, on=on, how=how)
-        
-        return self  # Return the new instance with joined data
-    
+        return self
     def write_parquet(self, sink=True, name=None, path='1.external', subfolder=None):
-        """Write the data to a parquet file.
-        
-        Args:
-            sink (bool): Whether to use sink_parquet or write_parquet. Defaults to True.
-            name (str): Name of the file (required).
-            path (str): Base path category to use. Defaults to '1.external'.
-            subfolder (str, optional): Subfolder within the base path. Defaults to None.
-        """
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
-        
         if name is None:
             raise ValueError("Name of file not provided.")
-        
         date_now = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
         path_map = {
             '1.external': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/1.external/",
             '2.raw': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/2.raw/",
             '3.interim': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/3.interim/",
             '4.processed': r"/Users/fredrik.hornell/Python/Private/Walmart_M5/data/4.processed/"
         }
-        
         if path not in path_map:
             raise ValueError(f"Invalid path option: {path}.")
-        
         base_path = path_map[path]
         if subfolder:
-            # Create full path including subfolder
             full_path = os.path.join(base_path, subfolder)
-            # Create subfolder if it doesn't exist
             os.makedirs(full_path, exist_ok=True)
             file_path = os.path.join(full_path, f"{name}_{date_now}.parquet")
         else:
             file_path = os.path.join(base_path, f"{name}_{date_now}.parquet")
-        
         if sink:
             self.data.sink_parquet(file_path, row_group_size=100000)
         else:
             self.result.write_parquet(file_path)
-        
         return self
-    
     def calculate_out_of_stock_periods(self, list_of_ids=None, binomial_threshold=0.001):
-        """
-        Calculate the probability that consecutive zero sales occur and classify periods
-        with a probability lower than the threshold as out of stock.
-
-        Parameters:
-        - list_of_ids (list): A list of IDs to filter the data. If None, all IDs are considered.
-        - binomial_threshold (float, optional): The threshold for considering a period as out of stock.
-          Defaults to 0.001.
-
-        Returns:
-        polars.LazyFrame: A lazy Polars DataFrame with information about zero sales periods and out of stock periods.
-
-        Note: 
-        The function assumes that 'pl' is an alias for the Polars library providing DataFrame operations.
-        """
         if self.data is None:
             raise ValueError("Data not loaded. Call load_data() first.")
         id_col, time_col, target_col = self.data.collect_schema().names()
@@ -304,4 +196,4 @@ class DataPreparation:
                 )
             .with_columns(pl.col('OOS').fill_null(strategy="zero").alias('OOS'))
         )
-        return self
+        return self 

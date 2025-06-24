@@ -33,6 +33,8 @@ from dash import dcc, html, Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
 
+from models.package.utils import get_path_to_latest_file
+
 POLARS_VERBOSE=1
 
 def create_trading_periods(df:pl.DataFrame, ordinal_col , n_components=3):
@@ -179,18 +181,6 @@ def create_rolling_train_test_splits(df, start_date, end_date, training_years=3,
         print(f"Test set: {test_df['date'].min()} to {test_df['date'].max()}")
     
     return splits
-
-def get_path_to_latest_file(parentfolder_name,subfolder_name):
-    project_root    = Path(__file__).parent.parent
-    base_path       =  project_root/'data'/parentfolder_name
-    subfolder_name  = subfolder_name
-    folder_path     = os.path.join(base_path, subfolder_name)
-    file_list       = os.listdir(folder_path)
-    ## Later apply logic for name cohesion and date coheasion
-    path            = os.path.join(folder_path, max(file_list))
-    
-    return path
-
 
 cols = [
 #    'id',
