@@ -1,12 +1,14 @@
-# Building a Robust Data Transformation Pipeline for Walmart M5 Forecasting: From Raw Data to Design Matrix
+# Building a Robust Data Transformation Pipeline for Walmart M5 Forecasting: From Raw Data to Feature Engineering
 
-*How we transformed messy retail data into a machine learning-ready design matrix using Polars and advanced feature engineering techniques*
+*How we transformed messy retail data into a machine learning-ready dataset using Polars, lazy evaluation, and advanced feature engineering techniques*
 
 ---
 
 ## Introduction
 
-In the competitive world of retail forecasting, the quality of your data transformation pipeline can make or break your predictive models. This article walks through a comprehensive data transformation pipeline developed for the Walmart M5 forecasting competition, demonstrating how we transformed raw retail data into a sophisticated design matrix ready for machine learning.
+In the competitive world of retail forecasting, the quality of your data transformation pipeline can make or break your predictive models. This article walks through a comprehensive data transformation pipeline developed for the Walmart M5 forecasting competition, demonstrating how we transformed raw retail data into a sophisticated feature-rich dataset ready for machine learning.
+
+We'll explore the `DataPreparation` class that serves as the foundation for all transformations, the power of Polars for efficient data processing, and the sophisticated feature engineering techniques that capture the complex patterns in retail data.
 
 ## The Challenge: Walmart M5 Dataset
 
@@ -16,7 +18,163 @@ The M5 dataset contains hierarchical sales data from Walmart stores across three
 - **Price data**: Selling prices for products
 - **Product metadata**: Hierarchical product classifications (item → department → category)
 
-Our goal was to transform this complex, multi-dimensional data into a clean, feature-rich design matrix suitable for advanced forecasting models.
+Our goal was to transform this complex, multi-dimensional data into a clean, feature-rich dataset suitable for advanced forecasting models.
+
+## Why Polars? The Power of Lazy Evaluation
+
+Before diving into our pipeline, let's understand why we chose **Polars** as our data processing engine and how lazy evaluation transforms our approach to data engineering.
+
+### Polars: The Modern Data Processing Engine
+
+Polars is a lightning-fast DataFrame library implemented in Rust, designed for high-performance data manipulation. Unlike pandas, Polars offers:
+
+- **Rust-based backend**: Near-native performance for data operations
+- **Memory efficiency**: Optimized memory usage through columnar storage
+- **Parallel processing**: Automatic parallelization of operations
+- **Type safety**: Strong typing prevents data type errors
+- **Lazy evaluation**: The game-changer for large-scale data processing
+
+### Lazy Evaluation: Building Computation Graphs
+
+Lazy evaluation is the cornerstone of our data processing strategy. Instead of executing operations immediately, Polars builds a **computation graph** that only executes when needed:
+
+```python
+# Eager evaluation (immediate execution)
+df = pl.read_parquet("large_file.parquet")  # Loads entire file into memory
+result = df.filter(pl.col("sales") > 0)     # Executes immediately
+
+# Lazy evaluation (builds computation graph)
+df = pl.scan_parquet("large_file.parquet")  # Creates a scan operation
+result = df.filter(pl.col("sales") > 0)     # Adds filter to computation graph
+# Nothing executes until we call .collect() or .sink_parquet()
+```
+
+**Benefits of Lazy Evaluation:**
+- **Memory efficiency**: Only loads data when necessary
+- **Query optimization**: Polars can optimize the entire computation graph
+- **Streaming processing**: Large datasets processed without loading entirely into memory
+- **Reproducible pipelines**: Computation graphs can be saved and reused
+
+## The DataPreparation Class: Our Foundation
+
+The `DataPreparation` class is a sophisticated wrapper around Polars that provides a fluent, chainable interface for data transformations. It encapsulates common data processing operations and provides a consistent API across the entire pipeline.
+
+### Class Architecture
+
+```python
+class DataPreparation:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.data = None      # Holds the LazyFrame or DataFrame
+        self.result = None    # Holds collected results
+        self.schema = None    # Schema information
+```
+
+### Key Methods and Capabilities
+
+#### 1. Data Loading with Lazy Evaluation
+
+```python
+def load_data(self, lazy=True):
+    if lazy:
+        self.data = pl.scan_parquet(self.file_path)  # Creates computation graph
+    else:
+        self.data = pl.read_parquet(self.file_path)  # Eager loading
+    # Update schema information
+    if isinstance(self.data, pl.LazyFrame):
+        self.schema = self.data.schema
+    else:
+        self.schema = self.data.schema
+    return self  # Enables method chaining
+```
+
+#### 2. Data Transformation Methods
+
+**`transform_sales_to_long_format()`**
+Converts wide-format sales data (dates as columns) to long format, essential for time series analysis:
+
+```python
+def transform_sales_to_long_format(self, drop_columns=['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id'], 
+                                  keep_id_column='id', value_column_name='sales', date_column_name='day'):
+    self.data = (
+        self.data
+        .drop(drop_columns)
+        .melt(id_vars=keep_id_column)  # Wide to long transformation
+        .rename({'variable': date_column_name, 'value': value_column_name})
+        .with_columns([
+            pl.col(value_column_name).cast(pl.Int16),
+        ])
+    )
+    return self
+```
+
+**`modify_data(expression)`**
+Generic method for applying custom transformations while maintaining lazy evaluation:
+
+```python
+def modify_data(self, expression):
+    self.data = expression(self.data)  # Applies lambda function to data
+    return self
+```
+
+#### 3. Data Operations
+
+**`join(other, on, how='inner')`**
+Performs joins between DataPreparation instances with validation:
+
+```python
+def join(self, other, on: list[str], how: str = 'inner'):
+    valid_hows = {'inner', 'left', 'right', 'full', 'semi', 'anti', 'cross'}
+    if how not in valid_hows:
+        raise ValueError(f"Invalid join type: {how}")
+    self.data = self.data.join(other.data, on=on, how=how)
+    return self
+```
+
+**`pivot_and_lazy()`**
+Performs pivot operations and converts to lazy evaluation:
+
+```python
+def pivot_and_lazy(self, index=None, on=None, values=None, aggregate_function=None):
+    if isinstance(self.data, pl.LazyFrame):
+        df = self.data.collect()
+    else:
+        df = self.data
+    pivot_kwargs = dict(index=index, on=on, values=values)
+    if aggregate_function is not None:
+        pivot_kwargs['aggregate_function'] = aggregate_function
+    self.data = (
+        df
+        .pivot(**pivot_kwargs)
+        .fill_null(0)
+        .lazy()  # Convert back to lazy evaluation
+    )
+    return self
+```
+
+#### 4. Output and Persistence
+
+**`write_parquet()`**
+Saves data with timestamped filenames and supports different pipeline stages:
+
+```python
+def write_parquet(self, sink=True, name=None, path='1.external', subfolder=None):
+    date_now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Path mapping for different pipeline stages
+    path_map = {
+        '1.external': os.path.join(project_root, 'data', '1.external'),
+        '2.raw': os.path.join(project_root, 'data', '2.raw'),
+        '3.interim': os.path.join(project_root, 'data', '3.interim'),
+        '4.processed': os.path.join(project_root, 'data', '4.processed'),
+    }
+    # ... file path construction
+    if sink:
+        if isinstance(self.data, pl.LazyFrame):
+            self.data.sink_parquet(file_path, row_group_size=100000)  # Efficient streaming write
+        else:
+            self.data.write_parquet(file_path)
+    return self
+```
 
 ## Pipeline Architecture
 
@@ -35,7 +193,7 @@ The first stage standardizes and cleans the raw data, preparing it for feature e
 ### Sales Data Transformation
 ```python
 DataPrepSalesRaw = (
-    DataPrepSales.load_data(lazy=True)
+    DataPrepSales.load_data(lazy=True)  # Lazy loading for memory efficiency
     .transform_sales_to_long_format(
         drop_columns=['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id'],
         keep_id_column='id',
@@ -174,130 +332,176 @@ prod_loc_interim = (
 
 ### 2.5 Sales Normalization (`2.sales_interim.py`)
 
-Normalize sales data to ensure consistent date coverage:
+This is one of the most critical transformations, ensuring data quality and consistency:
 
 ```python
 sales_interim = (
     DataPrepSalesRaw.load_data(lazy=True)
     .join(
-        DataPrepProdLocInterim.load_data(lazy=True)
-        .explode('prodloc_daterange').rename({'prodloc_daterange': 'date'}),
-        on=['id', 'date'],
-        how='inner'
+        DataPrepProdLocInterim
+        .load_data(lazy=True)
+        .select_columns(['id', 'prodloc_daterange'])
+        .modify_data(
+            lambda data: data.explode('prodloc_daterange').rename({'prodloc_daterange': 'date'})
+        )
+        , on=['id', 'date']
+        , how='inner'
     )
     .calculate_out_of_stock_periods(binomial_threshold=0.0001)
 )
 ```
 
-**Key transformations:**
-- **Date alignment**: Ensure all products have data for the same date range
-- **Out-of-stock detection**: Identify periods with zero sales
+#### The Join Operation: Tackling Leading Days of Zero Sales
 
-## Stage 3: Design Matrix Creation (`3.DesignMatric.py`)
+This join addresses a critical issue in retail data:
 
-The final stage assembles all features into a unified design matrix:
+**What This Join Accomplishes:**
+1. **Date Range Alignment**: Ensures all products have data for the same date range
+2. **Leading Zero Elimination**: Eliminates periods before a product was introduced
+3. **Consistent Coverage**: All products now have the same temporal coverage
 
+**The Process:**
+1. **Product Location Data**: Contains `prodloc_daterange` - a list of dates from first sale to the end of the dataset
+2. **Explode Operation**: Converts the date range list into individual rows
+3. **Inner Join**: Only keeps dates where both sales data and product availability exist
+4. **Result**: Clean dataset with consistent date coverage across all products
+
+#### The `calculate_out_of_stock_periods()` Method: Statistical Out-of-Stock Detection
+
+This method implements a sophisticated algorithm to detect unlikely periods of zero sales using binomial probability theory.
+
+**Algorithm Overview:**
 ```python
-DesignMatrix = (
-    sales_prep.load_data(lazy=True)
-    .pipe(delist, x='id', split='_', index=[3], col_name='state')
-    .join(
-        regressor_selection,
-        on=['date', 'state'],
-        how='inner'
+def calculate_out_of_stock_periods(self, list_of_ids=None, binomial_threshold=0.001):
+    # 1. Create zero sales indicator
+    # 2. Identify zero sales periods
+    # 3. Calculate probability of zero sales for each product
+    # 4. Apply binomial test to detect unlikely zero sales periods
+    # 5. Mark periods as out-of-stock (OOS)
+```
+
+**Step-by-Step Breakdown:**
+
+**Step 1: Zero Sales Indicator**
+```python
+df_zero_ind = (self.data.lazy()
+    .select(pl.col('*'), 
+            pl.when(pl.col(target_col) == 0).then(1).otherwise(0).alias('zero_sales_ind'))
+)
+```
+
+**Step 2: Zero Sales Period Identification**
+```python
+df_zero_sales_period = ( 
+    df_zero_ind
+    .sort([id_col, time_col])
+    .select(
+        pl.col('*'),
+        (pl.col('zero_sales_ind') - pl.col('zero_sales_ind').shift(1).over(id_col)).alias('delta')
+    )
+    .select(
+        pl.col('*').exclude('delta'),
+        pl.when(pl.col('delta')==-1).then(0).otherwise(pl.col('delta')).alias('delta')
+    )
+    .select(
+        pl.col('*'),
+        (pl.col('delta').cum_sum().over(id_col) * pl.col('zero_sales_ind')).alias('zero_sales_period')
+    )
+    .filter(pl.col('zero_sales_ind')==1)
+)
+```
+
+This complex operation:
+- **Delta Calculation**: Identifies transitions between sales and zero sales
+- **Period Grouping**: Groups consecutive zero sales days into periods
+- **Period Labeling**: Assigns unique identifiers to each zero sales period
+
+**Step 3: Probability Calculation**
+```python
+df_zero_sales_probability = (
+    df_zero_ind.group_by(id_col)
+    .agg(pl.col('zero_sales_ind').mean().alias('prob_zero_sales'))
+)
+```
+
+**Step 4: Binomial Test Application**
+```python
+df_zero_sales_period_aggregated =(
+    df_zero_sales_period
+    .group_by('id','zero_sales_period').agg(pl.col('zero_sales_ind').sum().alias('nbr_zero_sales_in_a_row')) 
+    .join(df_zero_sales_probability, on=[id_col])
+    .with_columns(
+        pl.when(
+            (pl.col('prob_zero_sales') ** pl.col('nbr_zero_sales_in_a_row') * 
+             (1 - pl.col('prob_zero_sales')) ** (pl.col('nbr_zero_sales_in_a_row') - pl.col('nbr_zero_sales_in_a_row'))
+            ) <= binomial_threshold
+        ).then(1).otherwise(0).alias('OOS')
     )
 )
 ```
 
-**Key transformations:**
-- **Feature selection**: Choose the most relevant features for modeling
-- **State extraction**: Parse state information from product IDs
-- **Final join**: Combine sales data with all engineered features
+#### The Binomial Probability Formula:
 
-## Advanced Techniques Used
-
-### 1. Gaussian Mixture Models for Non-linear Patterns
-
-We used Gaussian Mixture Models to capture complex temporal patterns:
-
-```python
-def create_gaussian_splines(df, ordinal_col, n_components=3):
-    X = df[ordinal_col].to_numpy().reshape(-1,1)
-    gmm = GaussianMixture(n_components=n_components, random_state=42)
-    gmm.fit(X)
-    latent_features = gmm.predict_proba(X)
-    return df.with_columns(
-        pl.from_numpy(latent_features, col_name).to_struct().alias(f'{ordinal_col}_guassian_splines')
-    )
+The algorithm uses the binomial probability formula:
+```
+P(X = k) = C(n,k) * p^k * (1-p)^(n-k)
 ```
 
-### 2. Cyclical Encoding for Temporal Features
+Where:
+- `p` = historical probability of zero sales for the product
+- `k` = number of consecutive zero sales days
+- `n` = total number of days in the period
 
-Cyclical encoding prevents discontinuities in temporal features:
+**Interpretation:**
+- If the probability of observing `k` consecutive zero sales days is ≤ `binomial_threshold` (0.0001), the period is marked as out-of-stock
+- This threshold represents a 0.01% chance - extremely unlikely under normal circumstances
 
-```python
-# Yearly cyclical features
-(pl.lit(2) * np.pi * pl.lit(i) * pl.col("day_of_year").mod(365.25)/pl.lit(365.25)).sin().alias(f'sin_{i}')
+
+## Practical Example
+
+Consider a product with the following sales pattern:
+```
+Date    Sales   Zero_Ind
+Day 1   5       0
+Day 2   0       1
+Day 3   0       1
+Day 4   0       1
+Day 5   3       0
+Day 6   0       1
+Day 7   0       1
+Day 8   4       0
 ```
 
-### 3. Lazy Evaluation with Polars
+**Analysis:**
+1. **Period 1**: Days 2-4 (3 consecutive zero sales)
+2. **Period 2**: Days 6-7 (2 consecutive zero sales)
+3. **Historical probability**: 5/8 = 0.625 (62.5% zero sales rate)
 
-Throughout the pipeline, we use Polars' lazy evaluation for memory efficiency:
+**Binomial Test:**
+- Period 1: P(3 consecutive zeros) = 0.625³ = 0.244 (24.4% chance) → **Not OOS**
+- Period 2: P(2 consecutive zeros) = 0.625² = 0.391 (39.1% chance) → **Not OOS**
 
-```python
-calendar_interim = (
-    calendar_raw.load_data(lazy=True)  # Lazy loading
-    .modify_data(lambda data: ...)     # Lazy transformations
-    .write_parquet(sink=True, ...)     # Only executes when needed
-)
-```
+However, if the historical probability was 0.1 (10% zero sales rate):
+- Period 1: P(3 consecutive zeros) = 0.1³ = 0.001 (0.1% chance) → **OOS** (≤ 0.0001 threshold)
+- Period 2: P(2 consecutive zeros) = 0.1² = 0.01 (1% chance) → **Not OOS**
 
-## Performance Benefits
 
-### 1. Memory Efficiency
-- **Lazy evaluation**: Operations are only executed when needed
-- **Streaming processing**: Large datasets processed without loading entirely into memory
-- **Optimized joins**: Polars' efficient join algorithms
 
-### 2. Processing Speed
-- **Rust-based backend**: Polars provides near-native performance
-- **Parallel processing**: Automatic parallelization of operations
-- **Vectorized operations**: Efficient array-based computations
-
-### 3. Data Quality
-- **Type safety**: Strong typing prevents data type errors
-- **Null handling**: Consistent null value treatment
-- **Schema validation**: Automatic schema checking and updates
-
-## Key Lessons Learned
-
-### 1. Modular Design
-Breaking the pipeline into focused modules makes it:
-- **Maintainable**: Easy to modify individual components
-- **Testable**: Each stage can be tested independently
-- **Reusable**: Components can be reused across projects
-
-### 2. Feature Engineering Strategy
-- **Domain knowledge**: Understanding retail patterns is crucial
-- **Temporal features**: Cyclical encoding captures seasonal patterns effectively
-- **Event modeling**: Events and holidays require sophisticated feature engineering
-
-### 3. Data Pipeline Best Practices
-- **Reproducibility**: Timestamped outputs ensure reproducible results
-- **Error handling**: Robust error handling prevents pipeline failures
-- **Documentation**: Clear documentation enables team collaboration
 
 ## Conclusion
 
-This data transformation pipeline demonstrates how to build a production-ready system for retail forecasting. By combining modern data engineering tools (Polars) with domain-specific feature engineering, we created a robust foundation for machine learning models.
+This data transformation pipeline demonstrates how to build a production-ready system for retail forecasting. By combining modern data engineering tools (Polars) with domain-specific feature engineering and sophisticated statistical methods, we created a robust foundation for machine learning models.
 
 The key to success lies in:
 1. **Understanding the domain**: Retail forecasting has unique challenges
 2. **Choosing the right tools**: Polars provides the performance and flexibility needed
-3. **Modular design**: Breaking complex transformations into manageable pieces
-4. **Feature engineering**: Creating features that capture the underlying patterns
+3. **Lazy evaluation**: Building computation graphs for memory efficiency
+4. **Modular design**: Breaking complex transformations into manageable pieces
+5. **Feature engineering**: Creating features that capture the underlying patterns
+6. **Statistical rigor**: Using probability theory for data quality issues
 
-This pipeline serves as a template for other time series forecasting projects, demonstrating how to transform raw data into a machine learning-ready format while maintaining performance and scalability.
+The `DataPreparation` class serves as the backbone of this pipeline, providing a consistent, chainable interface that makes complex transformations readable and maintainable. The combination of lazy evaluation, statistical out-of-stock detection, and sophisticated feature engineering creates a powerful foundation for retail forecasting applications.
+
 
 ---
 
