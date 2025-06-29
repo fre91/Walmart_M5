@@ -235,7 +235,7 @@ DataPrepPriceRaw = (
 
 ## Stage 2: Feature Engineering (`2.*.py`)
 
-This stage creates sophisticated features that capture temporal patterns, seasonal effects, and event impacts.
+This stage creates features that capture temporal patterns, seasonal effects, and event impacts.
 
 ### 2.1 Calendar Features (`2.calendar_features.py`)
 
@@ -284,7 +284,7 @@ holidays = (
 )
 ```
 
-**Key features created:**
+**Key features created from this:**
 - **Event indicators**: Boolean features for each unique event
 - **Event post-effects**: Features tracking 7 days after each event
 - **Gaussian spline events**: Non-linear event impact modeling
@@ -356,9 +356,7 @@ sales_interim = (
 This join addresses a critical issue in retail data:
 
 **What This Join Accomplishes:**
-1. **Date Range Alignment**: Ensures all products have data for the same date range
-2. **Leading Zero Elimination**: Eliminates periods before a product was introduced
-3. **Consistent Coverage**: All products now have the same temporal coverage
+- **Leading Zero Elimination**: Eliminates periods before a product was introduced
 
 **The Process:**
 1. **Product Location Data**: Contains `prodloc_daterange` - a list of dates from first sale to the end of the dataset
@@ -368,7 +366,7 @@ This join addresses a critical issue in retail data:
 
 #### The `calculate_out_of_stock_periods()` Method: Statistical Out-of-Stock Detection
 
-This method implements a sophisticated algorithm to detect unlikely periods of zero sales using binomial probability theory.
+This method implements an algorithm to detect unlikely periods of zero sales using binomial probability theory.
 
 **Algorithm Overview:**
 ```python
@@ -411,7 +409,7 @@ df_zero_sales_period = (
 )
 ```
 
-This complex operation:
+This operation:
 - **Delta Calculation**: Identifies transitions between sales and zero sales
 - **Period Grouping**: Groups consecutive zero sales days into periods
 - **Period Labeling**: Assigns unique identifiers to each zero sales period
@@ -456,7 +454,6 @@ Where:
 - If the probability of observing `k` consecutive zero sales days is ≤ `binomial_threshold` (0.0001), the period is marked as out-of-stock
 - This threshold represents a 0.01% chance - extremely unlikely under normal circumstances
 
-
 ## Practical Example
 
 Consider a product with the following sales pattern:
@@ -485,9 +482,6 @@ However, if the historical probability was 0.1 (10% zero sales rate):
 - Period 1: P(3 consecutive zeros) = 0.1³ = 0.001 (0.1% chance) → **OOS** (≤ 0.0001 threshold)
 - Period 2: P(2 consecutive zeros) = 0.1² = 0.01 (1% chance) → **Not OOS**
 
-
-
-
 ## Conclusion
 
 This data transformation pipeline demonstrates how to build a production-ready system for retail forecasting. By combining modern data engineering tools (Polars) with domain-specific feature engineering and sophisticated statistical methods, we created a robust foundation for machine learning models.
@@ -502,7 +496,6 @@ The key to success lies in:
 
 The `DataPreparation` class serves as the backbone of this pipeline, providing a consistent, chainable interface that makes complex transformations readable and maintainable. The combination of lazy evaluation, statistical out-of-stock detection, and sophisticated feature engineering creates a powerful foundation for retail forecasting applications.
 
-
 ---
 
-*The complete codebase and additional documentation can be found in the project repository. This pipeline was developed for the Walmart M5 forecasting competition and can be adapted for other retail forecasting applications.* 
+*The complete codebase and additional documentation can be found in the project repository: https://github.com/fre91/Walmart_M5/tree/main. This pipeline was developed for the Walmart M5 forecasting competition and can be adapted for other retail forecasting applications.* 

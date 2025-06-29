@@ -25,7 +25,6 @@ def create_event_features():
         .select_columns('date')
     )
     
-    calender.schema
     holidays = (
                 DataPrepCalendarRaw
                 .load_data(lazy=True)
