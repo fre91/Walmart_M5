@@ -1,7 +1,7 @@
 """
-Holiday Feature Processing
+Event/holiday Feature Processing
 
-Creates holiday-specific features for the dataset.
+Creates event-specific features for the dataset.
 """
 
 import polars as pl
@@ -14,9 +14,9 @@ from package.utils import get_path_to_latest_file
 
 def create_event_features():
     
-    DataPrepCalendarRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
+    DataPrepCalendarRaw = DataPreparation(get_path_to_latest_file('2.raw', 'calendar_raw'))
     
-    DataPrepCalendarRaw1 = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
+    DataPrepCalendarRaw1 = DataPreparation(get_path_to_latest_file('2.raw', 'calendar_raw'))
 
 
     calender = (
@@ -49,7 +49,8 @@ def create_event_features():
                 .pivot_and_lazy(
                     index='date',
                     on='event',
-                    values='value'
+                    values='value',
+                    aggregate_function = pl.any,
                 )
         )
     
@@ -71,7 +72,6 @@ def create_event_features():
                 )
         )
     )
-    holiday_output.collect().result
 
 
     holiday_output.write_parquet(
