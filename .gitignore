@@ -11,3 +11,4 @@ build/
 dist/
 .ipynb_checkpoints/
 data/4.processed/ 
+data/3.interim/sales
