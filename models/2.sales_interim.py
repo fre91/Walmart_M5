@@ -12,7 +12,7 @@ from package.utils import get_path_to_latest_file
 
 def create_sales_interim():
     
-    DataPrepSalesRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepSalesRaw'))
+    DataPrepSalesRaw = DataPreparation(get_path_to_latest_file('2.raw', 'sales_raw'))
     DataPrepProdLocInterim = DataPreparation(get_path_to_latest_file('3.interim', 'prodlocs'))
 
     sales_interim = (
@@ -29,6 +29,8 @@ def create_sales_interim():
             , how='inner'
         )
         .calculate_out_of_stock_periods(binomial_threshold=0.0001)
+        #.calculate_out_of_stock_periods(binomial_threshold=0.001) / fix so that I chain Call these 
+        #.calculate_out_of_stock_periods(binomial_threshold=0.01)  / fix so that I chain Call these 
     )
 
     sales_interim.write_parquet(

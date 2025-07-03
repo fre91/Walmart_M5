@@ -33,16 +33,6 @@ def create_trading_periods(df:pl.DataFrame, ordinal_col , n_components=3):
         pl.from_numpy(latent_features, col_name).to_struct().alias(f'{ordinal_col}_regimes')
     ).lazy()
 
-def get_path_to_latest_file(subfolder_name):
-    project_root    = Path(__file__).parent.parent
-    base_path       = project_root / "data/3.interim"
-    subfolder_name  = subfolder_name
-    folder_path     = os.path.join(base_path, subfolder_name)
-    file_list       = os.listdir(folder_path)
-    ## Later apply logic for name cohesion and date coheasion
-    path            = os.path.join(folder_path, max(file_list))
-    
-    return path
 
 def delist(data, x, split='_', index =[0], col_name='name'):
     return data.with_columns(
@@ -56,50 +46,50 @@ def delist(data, x, split='_', index =[0], col_name='name'):
 prodloc                  = get_path_to_latest_file('prodlocs')
 sales                    = get_path_to_latest_file('sales')
 
-calender_trig_features   = get_path_to_latest_file('calender_trig_features')
-holiday_bool_features    = get_path_to_latest_file('holiday_bool_features')
+calender_features   = get_path_to_latest_file('calender_features')
+calender_event_bool_features    = get_path_to_latest_file('calender_event_bool_features')
 snap_features            = get_path_to_latest_file('snap_features')
 # price_feature = get_path_to_latest_file('price')
-event_pre_post_effect_guassian_features   = get_path_to_latest_file('event_pre_post_effect_guassian_features')
-# regression weight vector weighting the 
+calender_event_gmm_features   = get_path_to_latest_file('calender_event_gmm_features')
+ 
 
 
 snap_output = (
     DataPreparation(snap_features)
     .load_data(lazy=True)
 )
-calender_trig_features_output = (
-    DataPreparation(calender_trig_features)
+calender_features_output = (
+    DataPreparation(calender_features)
     .load_data(lazy=True)
 )
-holiday_output = (
-    DataPreparation(holiday_bool_features)
+calender_event_bool_features_output = (
+    DataPreparation(calender_event_bool_features)
     .load_data(lazy=True)
 )
-guassian_event_output = (
-    DataPreparation(event_pre_post_effect_guassian_features)
+calender_event_gmm_features_output = (
+    DataPreparation(calender_event_gmm_features)
     .load_data(lazy=True)
 )
 
-sales_prep = DataPreparation(
+sales_output = DataPreparation(
     get_path_to_latest_file('sales')
 )
 
 regressors_output = (
     snap_output
     .join(
-        calender_trig_features_output
-        , on = 'date'
+        calender_features_output
+        , on = ['date']
         , how = 'left'
     )
     .join(
-        holiday_output
-        , on = 'date'
+        calender_event_bool_features_output
+        , on = ['date']
         , how = 'left'
     )
     .join(
-        guassian_event_output
-        , on = 'date'
+        calender_event_gmm_features_output
+        , on = ['date']
         , how = 'inner'
     )
 )
@@ -131,7 +121,7 @@ regressor_selection = (
 
 
 DesignMatrix = (
-    sales_prep
+    sales_output
     .load_data(lazy=True)
     .modify_data(
         lambda data:

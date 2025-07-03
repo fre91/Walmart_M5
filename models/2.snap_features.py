@@ -13,7 +13,7 @@ from package.utils import get_path_to_latest_file
 def create_snap_features():
     project_root = Path(__file__).parent.parent
     
-    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepCalendarRaw'))
+    calendar_raw = DataPreparation(get_path_to_latest_file('2.raw', 'calendar_raw'))
 
     snap_interim = (
         calendar_raw
@@ -38,7 +38,7 @@ def create_snap_features():
     
     snap_interim.write_parquet(
         sink=True,
-        name='snap_long_features',
+        name='snap_features',
         path='3.interim',
         subfolder='snap_features'
     )

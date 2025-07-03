@@ -7,7 +7,7 @@ The data comes from the Kaggle M5 Forecasting Accuracy competition, which featur
 ## approach
 
 ### Medium article series 
-https://medium.com/@hornell.fredrik/streamlining-walmarts-sales-data-analysis-with-polars-on-deepnotes-free-machine-2-vcpu-5-gb-a64e1c1623ab
+https://medium.com/@hornell.fredrik/building-a-robust-data-transformation-pipeline-for-walmart-m5-forecasting-from-raw-data-to-feature-d842e9700492
 
 ## Handling Large Files
 

@@ -16,8 +16,8 @@ from package.datapreparation import DataPreparation
 def create_prod_loc_interim():
     project_root = Path(__file__).parent.parent
     
-    DataPrepProdLocRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepProdLocRaw'))
-    DataPrepSalesRaw = DataPreparation(get_path_to_latest_file('2.raw', 'DataPrepSalesRaw'))
+    DataPrepProdLocRaw = DataPreparation(get_path_to_latest_file('2.raw', 'prodloc_raw'))
+    DataPrepSalesRaw = DataPreparation(get_path_to_latest_file('2.raw', 'sales_raw'))
 
     prod_loc_interim = (
         DataPrepProdLocRaw
