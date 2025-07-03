@@ -112,13 +112,23 @@ class DataPreparation:
             .lazy()
         )
         return self
-    def join(self, other, on: list[str], how: str = 'inner'):
+    def join(self, other, on: list[str] = None, how: str = 'inner'):
+        """
+        Join with another DataPreparation instance.
+        For 'cross' join, 'on' must be None.
+        For other join types, 'on' must be provided.
+        """
         if self.data is None or other.data is None:
             raise ValueError("Data not loaded in one or both instances. Call load_data() first.")
         valid_hows = {'inner', 'left', 'right', 'full', 'semi', 'anti', 'cross'}
         if how not in valid_hows:
             raise ValueError(f"Invalid join type: {how}. Must be one of {valid_hows}")
-        self.data = self.data.join(other.data, on=on, how=how)  # type: ignore
+        if how == 'cross':
+            self.data = self.data.join(other.data, how='cross')
+        else:
+            if on is None:
+                raise ValueError("Argument 'on' must be provided for non-cross joins.")
+            self.data = self.data.join(other.data, on=on, how=how)
         return self
     def write_parquet(self, sink=True, name=None, path='1.external', subfolder=None):
         if self.data is None:

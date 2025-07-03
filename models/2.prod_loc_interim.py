@@ -61,7 +61,7 @@ def create_prod_loc_interim():
 
     prod_loc_interim.write_parquet(
         sink=True, 
-        name='ProdLocs',
+        name='prodlocs',
         path='3.interim',
         subfolder = 'prodlocs'
     )
